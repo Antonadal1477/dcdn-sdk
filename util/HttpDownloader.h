@@ -1,17 +1,18 @@
 #ifndef _DCDN_UTIL_HTTP_DOWNLOADER_H_
 #define _DCDN_UTIL_HTTP_DOWNLOADER_H_
 
-#include <thread>
-#include <tuple>
+#include <curl/curl.h>
+
 #include <any>
 #include <list>
 #include <memory>
-#include <unordered_map>
-#include <string>
 #include <mutex>
+#include <string>
+#include <thread>
+#include <tuple>
+#include <unordered_map>
+
 #include "common/Common.h"
-#include <curl/curl.h>
-#include <curl/curl.h>
 
 NS_BEGIN(dcdn)
 NS_BEGIN(util)
@@ -37,12 +38,10 @@ public:
         {
             Idle,
         };
+
     public:
-        Task(CURL* curl, const HttpDownloaderTask& opt):
-            mCurl(curl),
-            mMaxBuf(opt.MaxBuf),
-            mNotify(opt.Notify),
-            mReceiver(opt.Receiver)
+        Task(CURL* curl, const HttpDownloaderTask& opt)
+            : mCurl(curl), mMaxBuf(opt.MaxBuf), mNotify(opt.Notify), mReceiver(opt.Receiver)
         {
         }
         ~Task()
@@ -74,6 +73,7 @@ public:
             data.swap(mData);
             return offset;
         }
+
     private:
         void notify()
         {
@@ -92,6 +92,7 @@ public:
             std::unique_lock<std::mutex> lck(mMtx);
             mData.insert(mData.end(), dat, dat + len);
         }
+
     private:
         friend class HttpDownloader;
         StatusType mStatus = Idle;
@@ -105,13 +106,10 @@ public:
         size_t mContentLength = 0;
         std::string mContentType;
     };
+
 public:
-    HttpDownloader()
-    {
-    }
-    ~HttpDownloader()
-    {
-    }
+    HttpDownloader() {}
+    ~HttpDownloader() {}
     int Init()
     {
         mCM = curl_multi_init();
@@ -120,16 +118,15 @@ public:
         }
         return ErrorCodeOk;
     }
-    void Start(bool detach=true)
+    void Start(bool detach = true)
     {
-        mThread = std::make_shared<std::thread>([&]() {
-            run();
-        });
+        mThread = std::make_shared<std::thread>([&]() { run(); });
         if (detach) {
             mThread->detach();
         }
     }
-    std::shared_ptr<std::thread> Thread() {
+    std::shared_ptr<std::thread> Thread()
+    {
         return mThread;
     }
     std::shared_ptr<Task> AddTask(const HttpDownloaderTask& opt)
@@ -150,6 +147,7 @@ public:
     {
         postEvent(EventType::CancelTask, task);
     }
+
 private:
     enum class EventType
     {
@@ -173,13 +171,13 @@ private:
             int num = 0;
             int mc = curl_multi_perform(mCM, &num);
             if (mc != CURLM_OK) {
-                //TODO abort all tasks, recovery CURLM
+                // TODO abort all tasks, recovery CURLM
                 continue;
             }
 
             mc = curl_multi_poll(mCM, NULL, 0, 10000, &num);
             if (mc != CURLM_OK) {
-                //TODO abort all tasks, recovery CURLM
+                // TODO abort all tasks, recovery CURLM
                 continue;
             }
 
@@ -204,12 +202,12 @@ private:
     void handleEvent(std::shared_ptr<Event> evt)
     {
         switch (evt->first) {
-        case EventType::AddTask:
-            break;
-        case EventType::CancelTask:
-            break;
-        default:
-            break;
+            case EventType::AddTask:
+                break;
+            case EventType::CancelTask:
+                break;
+            default:
+                break;
         }
     }
     void handleAddTaskEvent(std::shared_ptr<Event> evt)
@@ -218,7 +216,7 @@ private:
         mTasks[t.get()] = t;
         int ret = curl_multi_add_handle(mCM, t->mCurl);
         if (ret != CURLM_OK) {
-            //TODO setTask fail
+            // TODO setTask fail
             return;
         }
     }
@@ -238,6 +236,7 @@ private:
         t->write(p, size);
         return size;
     }
+
 private:
     std::shared_ptr<std::thread> mThread;
     std::mutex mMtx;

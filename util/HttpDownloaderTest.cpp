@@ -1,6 +1,6 @@
-#include <iostream>
 #include "HttpDownloader.h"
 
+#include <iostream>
 
 int main(int argc, char* argv[])
 {
@@ -12,7 +12,7 @@ int main(int argc, char* argv[])
         return 1;
     }
     d.Start();
-    //std::vector<std::shared_ptr<
+    // std::vector<std::shared_ptr<
     while (true) {
         std::this_thread::sleep_for(std::chrono::seconds(1));
     }

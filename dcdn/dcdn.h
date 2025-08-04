@@ -2,6 +2,7 @@
 #define _CAPELL_PCDN_SDK_H_
 
 #include <cstdint>
+
 #include "config.h"
 
 DCDN_NS_BEGIN
